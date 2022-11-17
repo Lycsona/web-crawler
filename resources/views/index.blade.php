@@ -89,7 +89,7 @@
                                 {{ Form::open(array('route' => 'web_crawler')) }}
 
                                 {{ Form::label('text', 'URL to crawl : ') }}
-                                {{ Form::text('url', 'https://laravel.com', ['placeholder' => 'https://laravel.com']) }}
+                                {{ Form::text('url', 'https://agencyanalytics.com', ['placeholder' => 'https://laravel.com']) }}
 
                                 {{ Form::label('text', 'Depth : ') }}
                                 {{ Form::text('depth', null) }}
