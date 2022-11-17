@@ -3,38 +3,50 @@
 namespace App\Services;
 
 use App\DTO\WebAnalytics;
-use App\DTO\Webpage;
+use App\DTO\WebPage;
 
-class WebAnalyticsService implements WebAnaliticsBuilderInterface
+class WebAnalyticsService implements WebAnalyticsBuilderInterface
 {
-    private WebAnalytics $webAnalytics;
-
     /**
-     * @param Webpage[] $webpages
+     * @param WebPage[] $webpages
      */
-    private array $webpages;
+    private array $webPages;
 
     public function __construct(
-        WebAnalytics $webAnalytics,
-        array        $webpages = []
+        private readonly WebAnalytics $webAnalytics,
+        array                         $webpages = []
     )
     {
-        $this->webAnalytics = $webAnalytics;
-        $this->webpages = $webpages;
+        $this->webPages = $webpages;
+    }
+
+    public function getWebAnalytics(): WebAnalytics
+    {
+        return $this->webAnalytics;
+    }
+
+    public function getWebPages(): array
+    {
+        return $this->webPages;
+    }
+
+    public function setWebPages(array $webPages): void
+    {
+        $this->webPages = $webPages;
     }
 
     public function calculateNumberOfCrawledPages(): void
     {
-        $numberOfCrawledPages = count($this->webpages);
+        $numberOfCrawledPages = count($this->getWebPages());
 
         $this->webAnalytics->setNumberOfCrawledPages($numberOfCrawledPages);
     }
 
     public function calculateNumberOfUniqueImages(): void
     {
-        $webpages = $this->webpages;
+        $webpages = $this->getWebPages();
 
-        $webpagesImages = array_map(fn(Webpage $webpage) => $webpage->getImages(), $webpages);
+        $webpagesImages = array_map(fn(WebPage $webpage) => $webpage->getImages(), $webpages);
 
         $numberOfUniqueImages = count(array_unique(array_merge(...$webpagesImages)));
 
@@ -43,20 +55,20 @@ class WebAnalyticsService implements WebAnaliticsBuilderInterface
 
     public function calculateNumberOfUniqueInternalLinks(): void
     {
-        $webpages = $this->webpages;
+        $webpages = $this->getWebPages();
 
-        $webpagesInternalLinks = array_map(fn(Webpage $webpage) => $webpage->getInternalUrls(), $webpages);
+        $webpagesInternalLinks = array_map(fn(WebPage $webpage) => $webpage->getInternalUrls(), $webpages);
 
         $numberOfUniqueInternalLinks = count(array_unique(array_merge(...$webpagesInternalLinks)));
 
         $this->webAnalytics->setNumberOfUniqueInternalLinks($numberOfUniqueInternalLinks);
     }
 
-    public function calculateNumberOfUniqueExternalinks(): void
+    public function calculateNumberOfUniqueExternalLinks(): void
     {
-        $webpages = $this->webpages;
+        $webpages = $this->getWebPages();
 
-        $webpagesExternalLinks = array_map(fn(Webpage $webpage) => $webpage->getExternalUrls(), $webpages);
+        $webpagesExternalLinks = array_map(fn(WebPage $webpage) => $webpage->getExternalUrls(), $webpages);
 
         $numberOfUniqueExternalLinks = count(array_unique(array_merge(...$webpagesExternalLinks)));
 
@@ -65,9 +77,12 @@ class WebAnalyticsService implements WebAnaliticsBuilderInterface
 
     public function calculateAveragePageLoad(): void
     {
-        $webpages = $this->webpages;
-        $allWebpages = count($this->webpages);
-        $webpagesLoadTime = array_map(fn(Webpage $webpage) => $webpage->getLoadTime(), $webpages);
+        $webpages = $this->getWebPages();
+
+        $allWebpages = count($this->webPages);
+
+        $webpagesLoadTime = array_map(fn(WebPage $webpage) => $webpage->getLoadTime(), $webpages);
+
         $averagePageLoad = round(array_sum($webpagesLoadTime) / $allWebpages, 2);
 
         $this->webAnalytics->setAveragePageLoad($averagePageLoad);
@@ -75,9 +90,12 @@ class WebAnalyticsService implements WebAnaliticsBuilderInterface
 
     public function calculateAverageWordCount(): void
     {
-        $webpages = $this->webpages;
-        $allWebpages = count($this->webpages);
-        $webpagesWordCount = array_map(fn(Webpage $webpage) => $webpage->getWordCount(), $webpages);
+        $webpages = $this->getWebPages();
+
+        $allWebpages = count($webpages);
+
+        $webpagesWordCount = array_map(fn(WebPage $webpage) => $webpage->getWordCount(), $webpages);
+
         $averageWordCount = round(array_sum($webpagesWordCount) / $allWebpages, 2);
 
         $this->webAnalytics->setAverageWordCount($averageWordCount);
@@ -85,27 +103,31 @@ class WebAnalyticsService implements WebAnaliticsBuilderInterface
 
     public function calculateAverageTitleLength(): void
     {
-        $webpages = $this->webpages;
-        $allWebpages = count($this->webpages);
-        $webpagesTitles = array_map(fn(Webpage $webpage) => $webpage->getPageTitle(), $webpages);
+        $webpages = $this->getWebPages();
+
+        $allWebpages = count($webpages);
+
+        $webpagesTitles = array_map(fn(WebPage $webpage) => $webpage->getTitle(), $webpages);
+
         $lengthsOfTitles = array_map('strlen', $webpagesTitles);
+
         $averageTitleLength = array_sum($lengthsOfTitles) / $allWebpages;
 
         $this->webAnalytics->setAverageTitleLength($averageTitleLength);
     }
 
-    public function buildWebAnalitics(array $webpages): WebAnalytics
+    public function buildWebPageAnalytics(array $webpages): WebAnalytics
     {
-        $this->webpages = $webpages;
+        $this->setWebPages($webpages);
 
         $this->calculateNumberOfUniqueImages();
-        $this->calculateNumberOfUniqueExternalinks();
+        $this->calculateNumberOfUniqueExternalLinks();
         $this->calculateNumberOfUniqueInternalLinks();
         $this->calculateAveragePageLoad();
         $this->calculateAverageTitleLength();
         $this->calculateAverageWordCount();
         $this->calculateNumberOfCrawledPages();
 
-        return $this->webAnalytics;
+        return $this->getWebAnalytics();
     }
 }

@@ -2,16 +2,15 @@
 
 namespace App\Services;
 
-use App\DTO\Webpage;
-use App\Exceptions\DuplicateException;
+use App\DTO\WebPage;
+use App\Exceptions\WebPageDuplicateException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use PharIo\Manifest\InvalidUrlException;
 
-class WebPageDownloaderService
+class WebPageBuilderService implements WebPageBuilderInterface
 {
     private array $webPages = [];
 
@@ -31,7 +30,7 @@ class WebPageDownloaderService
         return $this->webPagesHashes;
     }
 
-    public function addWebPage(Webpage $webPage): void
+    public function addWebPage(WebPage $webPage): void
     {
         $this->webPages[] = $webPage;
     }
@@ -42,12 +41,12 @@ class WebPageDownloaderService
     }
 
     /**
-     * @throws HttpClientException | RequestException
+     * @throws HttpClientException | RequestException | ConnectionException
      */
-    private function getWebPageContent(string $seedUrl): Response
+    public function getWebPageContent(string $url): Response
     {
         try {
-            $response = Http::get($seedUrl);
+            $response = Http::get($url);
 
             $response->throw();
         } catch (ConnectionException $exception) {
@@ -58,25 +57,25 @@ class WebPageDownloaderService
     }
 
     /**
-     * @throws DuplicateException
+     * @throws WebPageDuplicateException
      */
-    private function skipPageDuplicate(string $webPageContent): void
+    public function skipWebPageDuplicate(string $webPageContent): void
     {
         $contentHash = hash('md5', $webPageContent);
 
         if (in_array($contentHash, $this->getWebPagesHashes())) {
-            throw new DuplicateException('Web page duplicate was found.');
+            throw new WebPageDuplicateException('Web page duplicate was found, the page already crawled.');
         }
 
         $this->addWebPageHash($contentHash);
     }
 
     /**
-     * @throws DuplicateException
+     * @throws WebPageDuplicateException
      * @throws RequestException
      * @throws HttpClientException
      */
-    public function generateWebPageDTO(string $seedUrl): Webpage
+    public function buildWebPage(string $seedUrl): WebPage
     {
         $requestStartTime = microtime(true);
 
@@ -85,9 +84,10 @@ class WebPageDownloaderService
         $loadTime = microtime(true) - $requestStartTime;
 
         $content = $webPageResponse->body();
-        $this->skipPageDuplicate($content);
 
-        $webPage = new Webpage($seedUrl);
+        $this->skipWebPageDuplicate($content);
+
+        $webPage = new WebPage($seedUrl);
         $webPage->setLoadTime(str($loadTime));
         $webPage->setHttpResponse($webPageResponse->status());
 

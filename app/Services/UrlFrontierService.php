@@ -5,6 +5,7 @@ namespace App\Services;
 class UrlFrontierService
 {
     private array $newUrls = [];
+
     private array $crawledUrls = [];
 
     public function getNewUrls(): array

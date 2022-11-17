@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\DTO\WebAnalytics;
-use App\DTO\Webpage;
+use App\DTO\WebPage;
 
-interface WebAnaliticsBuilderInterface
+interface WebAnalyticsBuilderInterface
 {
     public function calculateNumberOfCrawledPages(): void;
 
@@ -13,7 +13,7 @@ interface WebAnaliticsBuilderInterface
 
     public function calculateNumberOfUniqueInternalLinks(): void;
 
-    public function calculateNumberOfUniqueExternalinks(): void;
+    public function calculateNumberOfUniqueExternalLinks(): void;
 
     public function calculateAveragePageLoad(): void;
 
@@ -22,7 +22,7 @@ interface WebAnaliticsBuilderInterface
     public function calculateAverageTitleLength(): void;
 
     /**
-     * @param Webpage[] $webpages
+     * @param WebPage[] $webpages
      */
-    public function buildWebAnalitics(array $webpages): WebAnalytics;
+    public function buildWebPageAnalytics(array $webpages): WebAnalytics;
 }

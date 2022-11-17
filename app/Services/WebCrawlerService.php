@@ -2,45 +2,44 @@
 
 namespace App\Services;
 
-use App\DTO\Webpage;
-use App\Exceptions\DuplicateException;
+use App\DTO\WebPage;
+use App\Exceptions\WebPageDuplicateException;
 use Exception;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\RequestException;
-use PharIo\Manifest\InvalidUrlException;
 
 class WebCrawlerService
 {
     public function __construct(
         public readonly UrlFrontierService       $urlFrontierService,
-        public readonly WebPageDownloaderService $pageDownloaderService
+        public readonly WebPageBuilderService $pageDownloaderService
     )
     {
     }
 
     /**
-     * The entry point for performing a "crawl" and analysis of one or more URLs.
-     * @param string $seedUrl The initial URL to scan and analyse
-     * @param int $depth The maximum number of additional pages to crawl, based on links contained in $seedUrl that refer to the same host.
-     * @return Webpage[]
+     * Start web crawling.
+     *
+     * @param string $seedUrl
+     * @param int $depth
+     * @return WebPage[]
      * @throws Exception
      */
     public function crawl(string $seedUrl, int $depth): array
     {
         try {
-
             while ($depth > 0) {
-                $newWebPagesUrls = $this->urlFrontierService->getNewUrls();
-                if (empty($newWebPagesUrls)) {
-                    $webPageDTO = $this->pageDownloaderService->generateWebPageDTO($seedUrl);
 
-                    $this->addNewPage($webPageDTO);
+                $newUrlsToCrawl = $this->urlFrontierService->getNewUrls();
+                if (empty($newUrlsToCrawl)) {
+                    $webPageDTO = $this->pageDownloaderService->buildWebPage($seedUrl);
+                    $this->addNewCrawledWebPage($webPageDTO);
                 }
 
-                $urls = count($newWebPagesUrls);
-                for ($i = 0; $i < $urls; $i++) {
+                $urlsCount = count($newUrlsToCrawl);
+                for ($i = 0; $i < $urlsCount; $i++) {
 
-                    if ($this->urlFrontierService->isUrlDuplicate($url = $newWebPagesUrls[$i])) {
+                    if ($this->urlFrontierService->isUrlDuplicate($url = $newUrlsToCrawl[$i])) {
                         continue; // Skip and try another url
                     }
 
@@ -49,14 +48,14 @@ class WebCrawlerService
                     }
 
                     try {
-                        $webPageDTO = $this->pageDownloaderService->generateWebPageDTO($url);
-                    } catch (DuplicateException|RequestException|HttpClientException) {
+                        $webPageDTO = $this->pageDownloaderService->buildWebPage($url);
+                    } catch (WebPageDuplicateException|RequestException|HttpClientException) {
                         continue; // Skip and try another url
                     }
 
-                    $this->addNewPage($webPageDTO);
+                    $this->addNewCrawledWebPage($webPageDTO);
 
-                    self::crawl($seedUrl, --$depth);
+                    $this->crawl($seedUrl, --$depth);
                     break 2;
                 }
             }
@@ -67,15 +66,15 @@ class WebCrawlerService
         }
     }
 
-    private function addNewPage(Webpage $webPageDTO): void
+    private function addNewCrawledWebPage(WebPage $webPageDTO): void
     {
         $this->urlFrontierService->addNewUrls($webPageDTO->getInternalUrls());
-        $this->urlFrontierService->addCrawledUrl($webPageDTO->getPageUrl());
+        $this->urlFrontierService->addCrawledUrl($webPageDTO->getUrl());
         $this->pageDownloaderService->addWebPage($webPageDTO);
     }
 
     private function isValidUrl(string $url): bool
     {
-        return filter_var($url, FILTER_VALIDATE_URL) !== false || $url[0] !== '#';
+        return filter_var($url, FILTER_VALIDATE_URL) !== false && $url[0] !== '#';
     }
 }

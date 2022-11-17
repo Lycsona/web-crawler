@@ -13,32 +13,31 @@ use Illuminate\View\View;
 
 class WebCrawlerController extends Controller
 {
-    private WebCrawlerService $webCrawlerService;
-    private WebAnalyticsService $webAnalyticsService;
-
     public function __construct(
-        WebCrawlerService $webCrawlerService,
-        WebAnalyticsService  $webAnalyticsService
+        private readonly WebCrawlerService   $webCrawlerService,
+        private readonly WebAnalyticsService $webAnalyticsService
     )
     {
-        $this->webCrawlerService = $webCrawlerService;
-        $this->webAnalyticsService = $webAnalyticsService;
     }
 
     /**
-     * Return crawler result.
+     * Run a web crawler.
      *
+     * @param WebCrawlerPostRequest $request
      * @return View|RedirectResponse
+     * @throws Exception
      */
-    public function index(WebCrawlerPostRequest $request):  View|RedirectResponse
+    public function index(WebCrawlerPostRequest $request): View|RedirectResponse
     {
         $validatedData = $request->validated();
 
         try {
             $webPages = $this->webCrawlerService->crawl($validatedData['url'], $validatedData['depth']);
 
-            $webAnalytics = $this->webAnalyticsService->buildWebAnalitics($webPages);
+            $webAnalytics = $this->webAnalyticsService->buildWebPageAnalytics($webPages);
+
         } catch (RequestException|HttpClientException $exception) {
+
             return back()->with('error', $exception->getMessage());
         }
 

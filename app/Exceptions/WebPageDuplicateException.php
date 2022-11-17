@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 
-class DuplicateException extends Exception
+class WebPageDuplicateException extends Exception
 {
     //
 }
