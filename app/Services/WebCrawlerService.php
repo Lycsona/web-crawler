@@ -11,8 +11,8 @@ use Illuminate\Http\Client\RequestException;
 class WebCrawlerService
 {
     public function __construct(
-        public readonly UrlFrontierService       $urlFrontierService,
-        public readonly WebPageBuilderService $pageDownloaderService
+        public readonly UrlFrontierService    $urlFrontierService,
+        public readonly WebPageBuilderService $webPageBuilderService
     )
     {
     }
@@ -32,7 +32,7 @@ class WebCrawlerService
 
                 $newUrlsToCrawl = $this->urlFrontierService->getNewUrls();
                 if (empty($newUrlsToCrawl)) {
-                    $webPageDTO = $this->pageDownloaderService->buildWebPage($seedUrl);
+                    $webPageDTO = $this->webPageBuilderService->buildWebPage($seedUrl);
                     $this->addNewCrawledWebPage($webPageDTO);
                 }
 
@@ -48,7 +48,7 @@ class WebCrawlerService
                     }
 
                     try {
-                        $webPageDTO = $this->pageDownloaderService->buildWebPage($url);
+                        $webPageDTO = $this->webPageBuilderService->buildWebPage($url);
                     } catch (WebPageDuplicateException|RequestException|HttpClientException) {
                         continue; // Skip and try another url
                     }
@@ -60,7 +60,7 @@ class WebCrawlerService
                 }
             }
 
-            return $this->pageDownloaderService->getWebPages();
+            return $this->webPageBuilderService->getWebPages();
         } catch (Exception $exception) {
             throw new Exception('An error occurs while crawling.', $exception->getCode());
         }
@@ -70,7 +70,7 @@ class WebCrawlerService
     {
         $this->urlFrontierService->addNewUrls($webPageDTO->getInternalUrls());
         $this->urlFrontierService->addCrawledUrl($webPageDTO->getUrl());
-        $this->pageDownloaderService->addWebPage($webPageDTO);
+        $this->webPageBuilderService->addWebPage($webPageDTO);
     }
 
     private function isValidUrl(string $url): bool
