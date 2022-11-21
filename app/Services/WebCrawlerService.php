@@ -47,9 +47,8 @@ class WebCrawlerService
                         continue; // Skip and try another url
                     }
 
-                    try {
-                        $webPageDTO = $this->webPageBuilderService->buildWebPage($url);
-                    } catch (WebPageDuplicateException|RequestException|HttpClientException) {
+                    $webPageDTO = $this->webPageBuilderService->buildWebPage($url);
+                    if ($webPageDTO === null) {
                         continue; // Skip and try another url
                     }
 
@@ -61,8 +60,8 @@ class WebCrawlerService
             }
 
             return $this->webPageBuilderService->getWebPages();
-        } catch (Exception $exception) {
-            throw new Exception('An error occurs while crawling.', $exception->getCode());
+        } catch (RequestException|HttpClientException $exception) {
+            throw new Exception('An error occurs while crawling. Please, check that you entered an existing URL.', $exception->getCode());
         }
     }
 

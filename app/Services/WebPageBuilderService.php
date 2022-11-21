@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\DTO\WebPage;
-use App\Exceptions\WebPageDuplicateException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\RequestException;
@@ -56,26 +55,18 @@ class WebPageBuilderService implements WebPageBuilderInterface
         return $response;
     }
 
-    /**
-     * @throws WebPageDuplicateException
-     */
-    public function skipWebPageDuplicate(string $webPageContent): void
+    private function isWebPageDuplicate(string $contentHash): bool
     {
-        $contentHash = hash('md5', $webPageContent);
-
-        if (in_array($contentHash, $this->getWebPagesHashes())) {
-            throw new WebPageDuplicateException('Web page duplicate was found, the page already crawled.');
-        }
-
-        $this->addWebPageHash($contentHash);
+        return in_array($contentHash, $this->getWebPagesHashes());
     }
 
     /**
-     * @throws WebPageDuplicateException
+     * Build and return WebPage DTO or null if it is a duplicate.
+     *
      * @throws RequestException
      * @throws HttpClientException
      */
-    public function buildWebPage(string $seedUrl): WebPage
+    public function buildWebPage(string $seedUrl): ?WebPage
     {
         $requestStartTime = microtime(true);
 
@@ -85,7 +76,11 @@ class WebPageBuilderService implements WebPageBuilderInterface
 
         $content = $webPageResponse->body();
 
-        $this->skipWebPageDuplicate($content);
+        if ($this->isWebPageDuplicate($contentHash = hash('md5', $content))) {
+            return null;
+        }
+
+        $this->addWebPageHash($contentHash);
 
         $webPage = new WebPage($seedUrl);
         $webPage->setLoadTime(str($loadTime));

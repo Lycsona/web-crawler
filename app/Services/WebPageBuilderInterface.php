@@ -10,7 +10,5 @@ interface WebPageBuilderInterface
 {
     public function getWebPageContent(string $url): mixed;
 
-    public function skipWebPageDuplicate(string $webPageContent): void;
-
-    public function buildWebPage(string $seedUrl): WebPage;
+    public function buildWebPage(string $seedUrl): ?WebPage;
 }

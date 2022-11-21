@@ -59,6 +59,6 @@ The app should be accessible at _http://localhost/_.
 ## Production environment:
 
  - project deployed and configured on AWS EC-2 instance
- - nothing to do, just go to => _http://54.183.229.1/_.
+ - nothing to do, just go to => _http://web-crawler.mariia-vain.com/_.
 
 ## Thank you for the challenge!

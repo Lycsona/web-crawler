@@ -36,7 +36,7 @@ class WebCrawlerController extends Controller
 
             $webAnalytics = $this->webAnalyticsService->buildWebPageAnalytics($webPages);
 
-        } catch (RequestException|HttpClientException $exception) {
+        } catch (Exception $exception) {
             return back()->with('error', $exception->getMessage());
         }
 
